@@ -19,7 +19,7 @@
 VERSION="1.1.1"
 PASSWORD_STORE_BACKUP_DEBUG=false              # true or false, prints debugging messages
 PASSWORD_STORE_BACKUP_DIR=".backups"           # default backup directory is $PASSWORD_STORE_BACKUP_DIR; if it is a relative path it becomes $PASSWORD_STORE_DIR/$PASSWORD_STORE_BACKUP_DIR
-PASSWORD_STORE_BACKUP_BASENAME="passwordstore" # to create backup filenames like passwordstore.190407.123423.tar.gz2
+PASSWORD_STORE_BACKUP_BASENAME="passwordstore" # to create backup filenames like passwordstore.190407.123423.tar.zstd
 TAR=$(which tar)
 
 cmd_backup_usage() {
@@ -29,14 +29,14 @@ Usage:
         On the first run it creates a directory ".backups" in \$PASSWORD_STORE_DIR.
         By default this is ~/.password-store/.backups".
         It creates a backup of the complete password store by creating a
-        compressed tar-file with extension .tar.bz2.
+        compressed tar-file with extension .tar.zstd.
         Backups themselves are excluded from the backup.
-        Without argument the backup file will receive the default name "passwordstore.DATE.TIME.tar.bz2"
+        Without argument the backup file will receive the default name "passwordstore.DATE.TIME.tar.zstd"
         where DATE and TIME are the current date and time.
         If an argument is given and it is a directory, the backup file will be placed
         into the specified directory instead of the default ".backups" directory.
         If an argument is given and it is not a directory, it is used as a file
-        name and the backup is stored with this filename with .at.gz2 appended.
+        name and the backup is stored with this filename with .at.zstd appended.
     $PROGRAM backup help
         Prints this help message.
     $PROGRAM backup version
@@ -45,13 +45,13 @@ Usage:
 Example: $PROGRAM backup
             this is the typical usage
             creates a backup and places it into \$PASSWORD_STORE_DIR/.backups
-            e.g. ~/.password-store/.backups/passwordstore.190407.122034.tar.gz2
+            e.g. ~/.password-store/.backups/passwordstore.190407.122034.tar.zstd
 Example: $PROGRAM backup Documents/Backups/
             creates a backup and places it into Documents/Backups/
-            i.e. Documents/Backups/passwordstore.190407.122034.tar.gz2
+            i.e. Documents/Backups/passwordstore.190407.122034.tar.zstd
 Example: $PROGRAM backup Documents/Backups/mypassbackup
             creates a backup and places it into
-            Documents/Backups/mypassbackup.tar.gz2
+            Documents/Backups/mypassbackup.tar.zstd
 
 For installation place this bash script file "backup.bash" into
 the passwordstore extension directory specified with \$PASSWORD_STORE_EXTENSIONS_DIR.
@@ -83,7 +83,7 @@ cmd_backup_createbackup() {
   # expect 0 or 1 argument
   # ignore 2nd argument and higher
   if [ $# -eq 0 ]; then
-    PASSWORD_STORE_BACKUP_PATH="$PASSWORD_STORE_BACKUP_DIR/${PASSWORD_STORE_BACKUP_BASENAME}.${TODAYTIME}.tar.bz2" # path includes filename
+    PASSWORD_STORE_BACKUP_PATH="$PASSWORD_STORE_BACKUP_DIR/${PASSWORD_STORE_BACKUP_BASENAME}.${TODAYTIME}.tar.zstd" # path includes filename
     $PASSWORD_STORE_BACKUP_DEBUG && echo "No arguments supplied. That is okay."
     $PASSWORD_STORE_BACKUP_DEBUG && echo "Setting backup directory to $PASSWORD_STORE_BACKUP_DIR"
     $PASSWORD_STORE_BACKUP_DEBUG && echo "Setting backup file to $PASSWORD_STORE_BACKUP_PATH"
@@ -102,10 +102,10 @@ cmd_backup_createbackup() {
 
     if [[ -d "$ARG1" ]]; then
       $PASSWORD_STORE_BACKUP_DEBUG && echo "Argument $ARG1 is a directory"
-      PASSWORD_STORE_BACKUP_PATH="$ARG1/${PASSWORD_STORE_BACKUP_BASENAME}.${TODAYTIME}.tar.bz2" # path includes filename
+      PASSWORD_STORE_BACKUP_PATH="$ARG1/${PASSWORD_STORE_BACKUP_BASENAME}.${TODAYTIME}.tar.zstd" # path includes filename
     else
       $PASSWORD_STORE_BACKUP_DEBUG && echo "Argument $ARG1 treated as a filename"
-      PASSWORD_STORE_BACKUP_PATH="${ARG1}.tar.bz2"
+      PASSWORD_STORE_BACKUP_PATH="${ARG1}.tar.zstd"
     fi
     $PASSWORD_STORE_BACKUP_DEBUG && echo "Setting exclusion directory to $PASSWORD_STORE_BACKUP_DIR"
     $PASSWORD_STORE_BACKUP_DEBUG && echo "Setting backup file to $PASSWORD_STORE_BACKUP_PATH"
@@ -120,11 +120,11 @@ cmd_backup_createbackup() {
 
   pushd "${PASSWORD_STORE_DIR}" >/dev/null || die "Could not cd into directory $PASSWORD_STORE_DIR. Aborting."
   mkdir -p "${PASSWORD_STORE_BACKUP_DIR}" >/dev/null || die "Could not create directory $PASSWORD_STORE_BACKUP_DIR. Aborting."
-  tar --exclude="${PASSWORD_STORE_BACKUP_DIR}" -cjf "${PASSWORD_STORE_BACKUP_PATH}" . # add v for debugging if need be
+  tar --exclude="${PASSWORD_STORE_BACKUP_DIR}" --zstd -cf "${PASSWORD_STORE_BACKUP_PATH}" . # add v for debugging if need be
   chmod 400 "${PASSWORD_STORE_BACKUP_PATH}" >/dev/null || die "Could not change permissions to read-only on file $PASSWORD_STORE_BACKUP_PATH. Aborting."
-  BZ2SIZE=$(wc -c <"${PASSWORD_STORE_BACKUP_PATH}") # returns size in bytes
-  BZ2ENTRIES=$(tar -tf "${PASSWORD_STORE_BACKUP_PATH}" | wc -l)
-  echo "Created backup file \"${PASSWORD_STORE_BACKUP_PATH}\" of size ${BZ2SIZE} bytes with ${BZ2ENTRIES} entries."
+  ZSTDSIZE=$(wc -c <"${PASSWORD_STORE_BACKUP_PATH}") # returns size in bytes
+  ZSTDENTRIES=$(tar -tf "${PASSWORD_STORE_BACKUP_PATH}" | wc -l)
+  echo "Created backup file \"${PASSWORD_STORE_BACKUP_PATH}\" of size ${ZSTDSIZE} bytes with ${ZSTDENTRIES} entries."
   popd >/dev/null || die "Could not change directory. Aborting."
 }
 
